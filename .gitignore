@@ -1,0 +1,43 @@
+# Xcode
+DerivedData/
+build/
+*.xcuserstate
+xcuserdata/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# CocoaPods (if used)
+Pods/
+
+# Carthage (if used)
+Carthage/Build/
+
+# Archives & distribution
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Crash logs
+*.crash
+
+# Playgrounds
+timeline.xctimeline
+playground.xcworkspace
+
+# App packaging
+*.app.dSYM.zip
+*.app.zip
+
+# Secrets (if any)
+.env
+*.xcconfig
+!*.xcconfig.template
+
