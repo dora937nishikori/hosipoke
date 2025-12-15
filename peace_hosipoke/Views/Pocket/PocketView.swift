@@ -9,7 +9,7 @@ struct PocketView: View {
 
     var body: some View {
         GeometryReader { geo in
-            let cardWidth = (geo.size.width - 16 * 2 - 16) / 2
+            let cardWidth = max(0, (geo.size.width - 16 * 2 - 16) / 2)
             ZStack(alignment: .bottomTrailing) {
                 ScrollView {
                     LazyVGrid(columns: columns, spacing: 16) {
@@ -65,7 +65,7 @@ struct PlaceholderCard: View {
     var body: some View {
         RoundedRectangle(cornerRadius: 18)
             .fill(Color(UIColor.systemGray5))
-            .frame(width: cardWidth, height: cardWidth * ratio)
+            .frame(width: max(0, cardWidth), height: max(0, cardWidth * ratio))
     }
 }
 
@@ -85,7 +85,7 @@ struct ItemCard: View {
             item.thumbnail
                 .resizable()
                 .scaledToFill()
-                .frame(width: cardWidth, height: cardWidth * aspectRatio)
+                .frame(width: max(0, cardWidth), height: max(0, cardWidth * aspectRatio))
                 .clipped()
                 .background(Color(UIColor.systemGray5))
                 .clipShape(RoundedRectangle(cornerRadius: 18))

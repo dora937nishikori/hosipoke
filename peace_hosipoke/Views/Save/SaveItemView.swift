@@ -79,37 +79,85 @@ struct PriorityPicker: View {
     @Binding var selected: WishPriority
 
     private let options: [WishPriority] = [.now, .soon, .later, .reward, .someday]
+    @State private var sparkling: WishPriority?
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 12) {
-                ForEach(options, id: \.self) { option in
-                    Button {
-                        selected = option
-                    } label: {
-                        VStack(spacing: 6) {
-                            Image(systemName: "star.fill")
-                                .font(.system(size: 26, weight: .bold))
-                                .foregroundStyle(option.color)
-                            Text(option.label)
-                                .font(.footnote)
-                                .fontWeight(.semibold)
-                                .foregroundStyle(option.color)
+        GeometryReader { geo in
+            let starSize: CGFloat = 32
+            let horizontalPadding: CGFloat = 16
+            let gridWidth = max(starSize * CGFloat(options.count), geo.size.width - 2 * horizontalPadding)
+            let spacing = max(0, (gridWidth - starSize * CGFloat(options.count)) / CGFloat(options.count - 1))
+            let lineWidth = max(0, gridWidth - starSize)
+
+            VStack(spacing: 10) {
+                ZStack(alignment: .center) {
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.2))
+                        .frame(width: lineWidth, height: 4)
+                        .cornerRadius(2)
+
+                    HStack(spacing: spacing) {
+                        ForEach(options, id: \.self) { option in
+                            starButton(option: option, starSize: starSize)
+                                .frame(width: starSize, height: starSize)
                         }
-                        .padding(.vertical, 10)
-                        .padding(.horizontal, 8)
-                        .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(selected == option ? option.color : Color.clear, lineWidth: 2)
-                        )
-                        .shadow(color: Color.black.opacity(0.08), radius: 3, y: 1)
+                    }
+                    .frame(width: gridWidth)
+                }
+                .frame(maxWidth: .infinity)
+
+                HStack(spacing: spacing) {
+                    ForEach(options, id: \.self) { option in
+                        Text(option.label)
+                            .font(.footnote)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(option.color)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.85)
+                            .frame(width: starSize + spacing, alignment: .center)
                     }
                 }
+                .frame(width: gridWidth)
             }
-            .padding(.vertical, 4)
-            .padding(.horizontal, 8)
+            .padding(.horizontal, horizontalPadding)
+            .frame(width: max(0, geo.size.width), alignment: .top)
         }
+        .frame(height: 130)
+    }
+
+    private func starButton(option: WishPriority, starSize: CGFloat) -> some View {
+        let isSelected = selected == option
+        let isSparkling = sparkling == option
+
+        return Button {
+            selected = option
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) {
+                sparkling = option
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                withAnimation(.easeOut(duration: 0.2)) {
+                    sparkling = nil
+                }
+            }
+        } label: {
+            ZStack {
+                Image(systemName: "star.fill")
+                    .font(.system(size: starSize, weight: .bold))
+                    .foregroundStyle(option.color)
+                    .scaleEffect(isSelected ? 1.15 : 1.0)
+                    .shadow(color: option.color.opacity(isSelected ? 0.4 : 0.0), radius: isSelected ? 6 : 0, y: 2)
+
+                if isSparkling {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundStyle(option.color)
+                        .scaleEffect(1.2)
+                        .opacity(0.9)
+                        .offset(y: -20)
+                        .transition(.scale.combined(with: .opacity))
+                }
+            }
+        }
+        .buttonStyle(.plain)
     }
 }
