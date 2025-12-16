@@ -85,44 +85,48 @@ struct PriorityPicker: View {
         GeometryReader { geo in
             let starSize: CGFloat = 32
             let horizontalPadding: CGFloat = 16
-            let gridWidth = max(starSize * CGFloat(options.count), geo.size.width - 2 * horizontalPadding)
-            let spacing = max(0, (gridWidth - starSize * CGFloat(options.count)) / CGFloat(options.count - 1))
-            let lineWidth = max(0, gridWidth - starSize)
+
+            // 画面幅を「等分」して、1列=1項目の幅を作る（星もラベルもこの幅で揃う）
+            let totalWidth = max(0, geo.size.width - 2 * horizontalPadding)
+            let slotWidth = totalWidth / CGFloat(options.count)
 
             VStack(spacing: 10) {
-                ZStack(alignment: .center) {
+                ZStack(alignment: .top) {
+
+                    // 線は「最初の星中心」〜「最後の星中心」までにしたいので
+                    // 左右を slotWidth/2 だけインセットする
                     Rectangle()
                         .fill(Color.gray.opacity(0.2))
-                        .frame(width: lineWidth, height: 4)
+                        .frame(height: 4)
                         .cornerRadius(2)
+                        .padding(.horizontal, slotWidth / 2)
+                        // 星の中心（starSize/2）に線を合わせる
+                        .offset(y: starSize / 2 - 2)
 
-                    HStack(spacing: spacing) {
+                    HStack(spacing: 0) {
                         ForEach(options, id: \.self) { option in
-                            starButton(option: option, starSize: starSize)
-                                .frame(width: starSize, height: starSize)
+                            VStack(spacing: 6) {
+                                starButton(option: option, starSize: starSize)
+                                    .frame(width: starSize, height: starSize)
+
+                                Text(option.label)
+                                    .font(.footnote)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(option.color)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.75)     // 端末が狭い時の保険
+                                    .allowsTightening(true)       // 文字詰め許可
+                            }
+                            .frame(width: slotWidth, alignment: .top)
                         }
                     }
-                    .frame(width: gridWidth)
                 }
                 .frame(maxWidth: .infinity)
-
-                HStack(spacing: spacing) {
-                    ForEach(options, id: \.self) { option in
-                        Text(option.label)
-                            .font(.footnote)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(option.color)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.85)
-                            .frame(width: starSize + spacing, alignment: .center)
-                    }
-                }
-                .frame(width: gridWidth)
             }
             .padding(.horizontal, horizontalPadding)
-            .frame(width: max(0, geo.size.width), alignment: .top)
+            .frame(width: geo.size.width, alignment: .top)
         }
-        .frame(height: 130)
+        .frame(height: 120)
     }
 
     private func starButton(option: WishPriority, starSize: CGFloat) -> some View {
@@ -145,7 +149,8 @@ struct PriorityPicker: View {
                     .font(.system(size: starSize, weight: .bold))
                     .foregroundStyle(option.color)
                     .scaleEffect(isSelected ? 1.15 : 1.0)
-                    .shadow(color: option.color.opacity(isSelected ? 0.4 : 0.0), radius: isSelected ? 6 : 0, y: 2)
+                    .shadow(color: option.color.opacity(isSelected ? 0.4 : 0.0),
+                            radius: isSelected ? 6 : 0, y: 2)
 
                 if isSparkling {
                     Image(systemName: "sparkles")
@@ -161,3 +166,4 @@ struct PriorityPicker: View {
         .buttonStyle(.plain)
     }
 }
+
