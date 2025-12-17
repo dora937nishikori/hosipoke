@@ -40,16 +40,36 @@ struct CameraPickerView: UIViewControllerRepresentable {
         func makeOverlay(in picker: UIImagePickerController) -> UIView {
             let overlay = CameraOverlayView(frame: picker.view.bounds)
             overlay.onShutter = { [weak self] in
-                self?.picker?.takePicture()
+                self?.takePictureIfCamera()
             }
             overlay.onPocket = { [weak self] in
                 self?.parent.onCancel()
             }
+            overlay.onLibrary = { [weak self] in
+                self?.presentLibrary()
+            }
             return overlay
         }
 
+        private func takePictureIfCamera() {
+            guard let picker = picker, picker.sourceType == .camera else { return }
+            picker.takePicture()
+        }
+
+        private func presentLibrary() {
+            guard UIImagePickerController.isSourceTypeAvailable(.photoLibrary),
+                  let current = picker else { return }
+            let library = UIImagePickerController()
+            library.delegate = self
+            library.sourceType = .photoLibrary
+            library.allowsEditing = false
+            current.present(library, animated: true)
+        }
+
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            parent.onCancel()
+            picker.dismiss(animated: true) {
+                self.parent.onCancel()
+            }
         }
 
         func imagePickerController(
@@ -57,9 +77,13 @@ struct CameraPickerView: UIViewControllerRepresentable {
             didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
         ) {
             if let image = info[.originalImage] as? UIImage {
-                parent.onImagePicked(image)
+                picker.dismiss(animated: true) {
+                    self.parent.onImagePicked(image)
+                }
             } else {
-                parent.onCancel()
+                picker.dismiss(animated: true) {
+                    self.parent.onCancel()
+                }
             }
         }
     }
@@ -69,6 +93,7 @@ struct CameraPickerView: UIViewControllerRepresentable {
 final class CameraOverlayView: UIView {
     var onShutter: (() -> Void)?
     var onPocket: (() -> Void)?
+    var onLibrary: (() -> Void)?
 
     private let dateLabel: UILabel = {
         let label = UILabel()
@@ -101,6 +126,18 @@ final class CameraOverlayView: UIView {
         return button
     }()
 
+    private let libraryButton: UIButton = {
+        let button = UIButton(type: .custom)
+        button.backgroundColor = UIColor(white: 0.95, alpha: 1.0)
+        button.layer.cornerRadius = 26
+        button.layer.borderColor = UIColor(white: 0.85, alpha: 1.0).cgColor
+        button.layer.borderWidth = 1
+        let image = UIImage(systemName: "photo.on.rectangle")?.withConfiguration(UIImage.SymbolConfiguration(pointSize: 22, weight: .regular))
+        button.setImage(image, for: .normal)
+        button.tintColor = .black
+        return button
+    }()
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         isUserInteractionEnabled = true
@@ -117,16 +154,10 @@ final class CameraOverlayView: UIView {
         let bottomBar = UIView()
         bottomBar.backgroundColor = .yellow
 
-        let leftCircle = UIView()
-        leftCircle.backgroundColor = UIColor(white: 0.95, alpha: 1.0)
-        leftCircle.layer.cornerRadius = 26
-        leftCircle.layer.borderColor = UIColor(white: 0.85, alpha: 1.0).cgColor
-        leftCircle.layer.borderWidth = 1
-
         dateLabel.text = Self.dateString(Date())
 
-        [topBar, bottomBar, dateLabel, leftCircle, shutterButton, pocketButton].forEach { addSubview($0) }
-        [topBar, bottomBar, dateLabel, leftCircle, shutterButton, pocketButton].forEach { $0.translatesAutoresizingMaskIntoConstraints = false }
+        [topBar, bottomBar, dateLabel, libraryButton, shutterButton, pocketButton].forEach { addSubview($0) }
+        [topBar, bottomBar, dateLabel, libraryButton, shutterButton, pocketButton].forEach { $0.translatesAutoresizingMaskIntoConstraints = false }
 
         NSLayoutConstraint.activate([
             topBar.topAnchor.constraint(equalTo: topAnchor),
@@ -139,10 +170,10 @@ final class CameraOverlayView: UIView {
             bottomBar.trailingAnchor.constraint(equalTo: trailingAnchor),
             bottomBar.heightAnchor.constraint(equalToConstant: 130),
 
-            leftCircle.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 28),
-            leftCircle.bottomAnchor.constraint(equalTo: bottomBar.bottomAnchor, constant: -34),
-            leftCircle.widthAnchor.constraint(equalToConstant: 52),
-            leftCircle.heightAnchor.constraint(equalToConstant: 52),
+            libraryButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 28),
+            libraryButton.bottomAnchor.constraint(equalTo: bottomBar.bottomAnchor, constant: -34),
+            libraryButton.widthAnchor.constraint(equalToConstant: 52),
+            libraryButton.heightAnchor.constraint(equalToConstant: 52),
 
             shutterButton.centerXAnchor.constraint(equalTo: centerXAnchor),
             shutterButton.centerYAnchor.constraint(equalTo: bottomBar.centerYAnchor),
@@ -158,10 +189,12 @@ final class CameraOverlayView: UIView {
 
         shutterButton.addTarget(self, action: #selector(shutterTapped), for: .touchUpInside)
         pocketButton.addTarget(self, action: #selector(pocketTapped), for: .touchUpInside)
+        libraryButton.addTarget(self, action: #selector(libraryTapped), for: .touchUpInside)
     }
 
     @objc private func shutterTapped() { onShutter?() }
     @objc private func pocketTapped() { onPocket?() }
+    @objc private func libraryTapped() { onLibrary?() }
 
     private static func dateString(_ date: Date) -> String {
         let df = DateFormatter()
