@@ -32,9 +32,16 @@ struct ContentView: View {
                         onRetake: { showCamera = true }
                     )
                 case .detail(let item):
-                    ItemDetailView(item: item) {
-                        navigationPath.removeLast()
-                    }
+                    ItemDetailView(
+                        item: item,
+                        onSave: { updatedNote, updatedPriority in
+                            store.update(id: item.id, note: updatedNote, priority: updatedPriority)
+                            navigationPath.removeLast()
+                        },
+                        onClose: {
+                            navigationPath.removeLast()
+                        }
+                    )
                 }
             }
         }
