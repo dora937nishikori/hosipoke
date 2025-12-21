@@ -24,7 +24,7 @@ struct ItemDetailView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("いつほしい？")
                             .font(.headline)
-                        PriorityInlinePicker(selected: $priority)
+                        PriorityPicker(selected: $priority)
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
@@ -72,40 +72,5 @@ struct ItemDetailView: View {
                 }
             }
         }
-    }
-}
-
-private struct PriorityInlinePicker: View {
-    @Binding var selected: WishPriority
-    private let options: [WishPriority] = [.now, .soon, .later, .reward, .someday]
-
-    var body: some View {
-        HStack(spacing: 12) {
-            ForEach(options, id: \.self) { option in
-                Button {
-                    selected = option
-                } label: {
-                    VStack(spacing: 6) {
-                        Image(systemName: "star.fill")
-                            .font(.system(size: 22, weight: .bold))
-                            .foregroundStyle(option.color)
-                        Text(option.label)
-                            .font(.caption2)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(option.color)
-                    }
-                    .padding(8)
-                    .background(Color.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(selected == option ? option.color : Color.clear, lineWidth: 2)
-                    )
-                    .shadow(color: Color.black.opacity(0.05), radius: 2, y: 1)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .scrollIndicators(.hidden)
     }
 }
