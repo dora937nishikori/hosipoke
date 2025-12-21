@@ -5,34 +5,58 @@ struct PocketView: View {
     let onSelect: (WishItem) -> Void
     let onAdd: () -> Void
 
-    private let columns = [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)]
-
     var body: some View {
         GeometryReader { geo in
-            let cardWidth = max(0, (geo.size.width - 16 * 2 - 16) / 2)
+            let horizontalPadding: CGFloat = 16
+            let columnSpacing: CGFloat = 16
+            let verticalSpacing: CGFloat = 16
+            let rightColumnTopOffset: CGFloat = 12
+            let cardWidth = max(0, (geo.size.width - horizontalPadding * 2 - columnSpacing) / 2)
+
+            let leftItems = items.enumerated().filter { $0.offset % 2 == 0 }.map { $0.element }
+            let rightItems = items.enumerated().filter { $0.offset % 2 == 1 }.map { $0.element }
+
             ZStack(alignment: .bottomTrailing) {
                 ScrollView {
-                    LazyVGrid(columns: columns, spacing: 16) {
-                        if items.isEmpty {
-                            let ratios: [CGFloat] = [1.2, 1.0, 1.1, 0.9]
-                            ForEach(Array(ratios.enumerated()), id: \.offset) { idx, ratio in
-                                PlaceholderCard(ratio: ratio, cardWidth: cardWidth)
-                                    .padding(.top, idx % 2 == 1 ? 12 : 0)
-                            }
-                        } else {
-                            ForEach(Array(items.enumerated()), id: \.element.id) { idx, item in
-                                let column = idx % 2
-                                Button {
-                                    onSelect(item)
-                                } label: {
-                                    ItemCard(item: item, cardWidth: cardWidth)
+                    HStack(alignment: .top, spacing: columnSpacing) {
+                        VStack(spacing: verticalSpacing) {
+                            if items.isEmpty {
+                                PlaceholderColumn(
+                                    ratios: [1.2, 1.0, 1.1, 0.9],
+                                    cardWidth: cardWidth,
+                                    topOffset: 0,
+                                    spacing: verticalSpacing
+                                )
+                            } else {
+                                ForEach(leftItems, id: \.id) { item in
+                                    Button { onSelect(item) } label: {
+                                        ItemCard(item: item, cardWidth: cardWidth)
+                                    }
+                                    .buttonStyle(.plain)
                                 }
-                                .padding(.top, column == 1 ? 12 : 0)
-                                .buttonStyle(.plain)
+                            }
+                        }
+
+                        VStack(spacing: verticalSpacing) {
+                            if items.isEmpty {
+                                PlaceholderColumn(
+                                    ratios: [1.0, 1.1, 0.95, 1.05],
+                                    cardWidth: cardWidth,
+                                    topOffset: rightColumnTopOffset,
+                                    spacing: verticalSpacing
+                                )
+                            } else {
+                                ForEach(Array(rightItems.enumerated()), id: \.element.id) { idx, item in
+                                    Button { onSelect(item) } label: {
+                                        ItemCard(item: item, cardWidth: cardWidth)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .padding(.top, idx == 0 ? rightColumnTopOffset : 0)
+                                }
                             }
                         }
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, horizontalPadding)
                     .padding(.top, 24)
                     .padding(.bottom, 120) // space for floating button
                 }
@@ -66,6 +90,22 @@ struct PlaceholderCard: View {
         RoundedRectangle(cornerRadius: 18)
             .fill(Color(UIColor.systemGray5))
             .frame(width: max(0, cardWidth), height: max(0, cardWidth * ratio))
+    }
+}
+
+private struct PlaceholderColumn: View {
+    let ratios: [CGFloat]
+    let cardWidth: CGFloat
+    let topOffset: CGFloat
+    let spacing: CGFloat
+
+    var body: some View {
+        VStack(spacing: spacing) {
+            ForEach(Array(ratios.enumerated()), id: \.offset) { idx, ratio in
+                PlaceholderCard(ratio: ratio, cardWidth: cardWidth)
+                    .padding(.top, idx == 0 ? topOffset : 0)
+            }
+        }
     }
 }
 
