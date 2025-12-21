@@ -56,10 +56,13 @@ struct PocketView: View {
                             }
                         }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, horizontalPadding)
                     .padding(.top, 24)
                     .padding(.bottom, 120) // space for floating button
                 }
+                // ScrollView がコンテンツ高さより小さい場合もボタン位置を固定したいので全体を最大化
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
                 Button(action: onAdd) {
                     VStack(spacing: 4) {
