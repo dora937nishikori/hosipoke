@@ -35,7 +35,9 @@ struct WishItem: Identifiable, Hashable {
     var priority: WishPriority
 
     func hash(into hasher: inout Hasher) { hasher.combine(id) }
-    static func == (lhs: WishItem, rhs: WishItem) -> Bool { lhs.id == rhs.id }
+    static func == (lhs: WishItem, rhs: WishItem) -> Bool {
+        lhs.id == rhs.id && lhs.note == rhs.note && lhs.priority == rhs.priority
+    }
 
     var thumbnail: Image {
         if let uiImage = image {
