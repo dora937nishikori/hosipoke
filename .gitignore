@@ -41,3 +41,86 @@ playground.xcworkspace
 *.xcconfig
 !*.xcconfig.template
 
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+*.iml
+.metadata
+
+# iOS (一時的に除外 - iOS開発開始時に削除してください)
+ios/
+
+# IntelliJ IDEA / Android Studio
+.idea/
+*.iml
+*.ipr
+*.iws
+.idea_modules/
+
+# Android
+*.apk
+*.ap_
+*.aab
+*.dex
+*.class
+bin/
+gen/
+out/
+release/
+.gradle/
+local.properties
+proguard/
+*.log
+
+# iOS
+*.mode1v3
+*.mode2v3
+*.moved-aside
+*.pbxuser
+*.perspectivev3
+**/*sync/
+.sconsign.dblite
+.tags*
+**/.vagrant/
+**/DerivedData/
+*.hmap
+*.ipa
+*.xcuserstate
+project.xcworkspace/
+xcuserdata/
+**/.symlinks/
+**/profile
+**/xcuserdata
+**/.generated/
+Flutter/App.framework
+Flutter/Flutter.framework
+Flutter/Flutter.podspec
+Flutter/Generated.xcconfig
+Flutter/ephemeral
+Flutter/app.flx
+Flutter/app.zip
+Flutter/flutter_assets/
+Flutter/flutter_export_environment.sh
+ServiceDefinitions.json
+Runner.entitlements
+Runner-Debug.entitlements
+Runner-Release.entitlements
+Flutter/Flutter-Debug.xcconfig
+Flutter/Flutter-Release.xcconfig
+Flutter/Flutter-Profile.xcconfig
+
+# Coverage
+coverage/
+*.lcov
+
+# Exceptions to above rules.
+!default.mode1v3
+!default.mode2v3
+!default.pbxuser
+!default.perspectivev3
+
