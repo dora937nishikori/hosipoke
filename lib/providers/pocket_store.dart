@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import '../domain/repositories/wish_repository.dart';
 import '../domain/wish.dart';
@@ -28,6 +29,7 @@ class PocketStore extends ChangeNotifier {
     required String note,
     required WishPriority priority,
   }) async {
+    final aspectRatio = await _computeAspectRatio(imageFile);
     final trimmed = note.trim();
     final wish = Wish(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -35,6 +37,7 @@ class PocketStore extends ChangeNotifier {
       createdAt: DateTime.now(),
       imagePath: imageFile.path,
       priority: priority,
+      aspectRatio: aspectRatio,
     );
     await repository.save(wish);
     _items = await repository.fetchAll();
@@ -57,6 +60,19 @@ class PocketStore extends ChangeNotifier {
     await repository.update(updated);
     _items = await repository.fetchAll();
     notifyListeners();
+  }
+
+  Future<double> _computeAspectRatio(File imageFile) async {
+    try {
+      final bytes = await imageFile.readAsBytes();
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frame = await codec.getNextFrame();
+      final image = frame.image;
+      final ratio = image.height / image.width;
+      return ratio.isFinite && ratio > 0 ? ratio : 1.2;
+    } catch (_) {
+      return 1.2;
+    }
   }
 }
 

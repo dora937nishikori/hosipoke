@@ -32,12 +32,12 @@ class _PriorityPickerState extends State<PriorityPicker> {
     return LayoutBuilder(
       builder: (context, constraints) {
         const horizontalPadding = 16.0;
-        const starSize = 32.0;
+        const starSize = 28.0;
         final totalWidth = constraints.maxWidth - 2 * horizontalPadding;
         final slotWidth = totalWidth / _options.length;
 
         return SizedBox(
-          height: 120,
+          height: 64,
           child: Column(
             children: [
               Stack(

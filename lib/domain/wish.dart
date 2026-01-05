@@ -6,6 +6,7 @@ class Wish {
   final DateTime createdAt;
   final String imagePath;
   final WishPriority priority;
+  final double aspectRatio;
 
   const Wish({
     required this.id,
@@ -13,6 +14,7 @@ class Wish {
     required this.createdAt,
     required this.imagePath,
     required this.priority,
+    required this.aspectRatio,
   });
 
   Wish copyWith({
@@ -21,6 +23,7 @@ class Wish {
     DateTime? createdAt,
     String? imagePath,
     WishPriority? priority,
+    double? aspectRatio,
   }) {
     return Wish(
       id: id ?? this.id,
@@ -28,6 +31,7 @@ class Wish {
       createdAt: createdAt ?? this.createdAt,
       imagePath: imagePath ?? this.imagePath,
       priority: priority ?? this.priority,
+      aspectRatio: aspectRatio ?? this.aspectRatio,
     );
   }
 }

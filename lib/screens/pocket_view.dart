@@ -43,73 +43,94 @@ class PocketView extends StatelessWidget {
             }
           }
 
-          return Stack(
-            children: [
-              SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.only(
-                    left: horizontalPadding,
-                    right: horizontalPadding,
-                    top: 24,
-                    bottom: 120,
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          children: items.isEmpty
-                              ? _buildPlaceholderColumn(
-                                  [1.2, 1.0, 1.1, 0.9],
-                                  cardWidth,
-                                  0,
-                                  verticalSpacing,
-                                )
-                              : leftItems
-                                  .map((item) => ItemCard(
-                                        item: item,
-                                        cardWidth: cardWidth,
-                                        onTap: () => onSelect(item),
-                                      ))
-                                  .toList(),
-                        ),
+          return Scaffold(
+            body: Stack(
+              fit: StackFit.expand,
+              children: [
+                SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                        left: horizontalPadding,
+                        right: horizontalPadding,
+                        top: 24,
+                        bottom: 120,
                       ),
-                      SizedBox(width: columnSpacing),
-                      Expanded(
-                        child: Column(
-                          children: items.isEmpty
-                              ? _buildPlaceholderColumn(
-                                  [1.0, 1.1, 0.95, 1.05],
-                                  cardWidth,
-                                  rightColumnTopOffset,
-                                  verticalSpacing,
-                                )
-                              : rightItems.asMap().entries.map((entry) {
-                                  final index = entry.key;
-                                  final item = entry.value;
-                                  return Padding(
-                                    padding: EdgeInsets.only(
-                                      top: index == 0 ? rightColumnTopOffset : 0,
-                                    ),
-                                    child: ItemCard(
-                                      item: item,
-                                      cardWidth: cardWidth,
-                                      onTap: () => onSelect(item),
-                                    ),
-                                  );
-                                }).toList(),
-                        ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              children: items.isEmpty
+                                  ? _buildPlaceholderColumn(
+                                      [1.2, 1.0, 1.1, 0.9],
+                                      cardWidth,
+                                      0,
+                                      verticalSpacing,
+                                    )
+                                  : leftItems
+                                      .asMap()
+                                      .entries
+                                      .map((entry) {
+                                        final isLast = entry.key == leftItems.length - 1;
+                                        final item = entry.value;
+                                        return Padding(
+                                          padding: EdgeInsets.only(
+                                            bottom: isLast ? 0 : verticalSpacing,
+                                          ),
+                                          child: ItemCard(
+                                            key: ValueKey(item.id),
+                                            item: item,
+                                            cardWidth: cardWidth,
+                                            onTap: () => onSelect(item),
+                                          ),
+                                        );
+                                      })
+                                      .toList(),
+                            ),
+                          ),
+                          SizedBox(width: columnSpacing),
+                          Expanded(
+                            child: Column(
+                              children: items.isEmpty
+                                  ? _buildPlaceholderColumn(
+                                      [1.0, 1.1, 0.95, 1.05],
+                                      cardWidth,
+                                      rightColumnTopOffset,
+                                      verticalSpacing,
+                                    )
+                                  : rightItems.asMap().entries.map((entry) {
+                                      final index = entry.key;
+                                      final item = entry.value;
+                                      final isLast = index == rightItems.length - 1;
+                                      return Padding(
+                                        padding: EdgeInsets.only(
+                                          top: index == 0 ? rightColumnTopOffset : 0,
+                                          bottom: isLast ? 0 : verticalSpacing,
+                                        ),
+                                        child: ItemCard(
+                                          key: ValueKey(item.id),
+                                          item: item,
+                                          cardWidth: cardWidth,
+                                          onTap: () => onSelect(item),
+                                        ),
+                                      );
+                                    }).toList(),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-              Positioned(
-                right: 20,
-                bottom: 24,
-                child: _buildAddButton(),
-              ),
-            ],
+                Positioned(
+                  right: 20,
+                  bottom: 50,
+                  child: _buildAddButton(),
+                ),
+              ],
+            ),
           );
         },
       ),
