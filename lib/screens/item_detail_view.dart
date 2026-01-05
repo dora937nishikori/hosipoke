@@ -24,12 +24,20 @@ class ItemDetailView extends StatefulWidget {
 class _ItemDetailViewState extends State<ItemDetailView> {
   late String _memo;
   late WishPriority _priority;
+  late final TextEditingController _memoController;
 
   @override
   void initState() {
     super.initState();
     _memo = widget.item.note;
     _priority = widget.item.priority;
+    _memoController = TextEditingController(text: _memo);
+  }
+
+  @override
+  void dispose() {
+    _memoController.dispose();
+    super.dispose();
   }
 
   @override
@@ -120,10 +128,7 @@ class _ItemDetailViewState extends State<ItemDetailView> {
                           ),
                         ),
                         maxLines: null,
-                        controller: TextEditingController(text: _memo)
-                          ..selection = TextSelection.fromPosition(
-                            TextPosition(offset: _memo.length),
-                          ),
+                        controller: _memoController,
                         onChanged: (value) {
                           setState(() {
                             _memo = value;

@@ -27,32 +27,14 @@ class _ItemCardState extends State<ItemCard> {
   @override
   void initState() {
     super.initState();
-    _loadAspectRatio();
+    _aspectRatio = widget.item.aspectRatio;
   }
 
-  Future<void> _loadAspectRatio() async {
-    if (widget.item.imagePath.isNotEmpty) {
-      try {
-        final imageBytes = await File(widget.item.imagePath).readAsBytes();
-        final codec = await ui.instantiateImageCodec(imageBytes);
-        final frame = await codec.getNextFrame();
-        final image = frame.image;
-        final aspectRatio = image.height / image.width;
-        if (mounted) {
-          setState(() {
-            _aspectRatio = aspectRatio;
-          });
-        }
-      } catch (e) {
-        // エラー時はデフォルト値を使用
-        if (mounted) {
-          setState(() {
-            _aspectRatio = 1.2;
-          });
-        }
-      }
-    } else {
-      _aspectRatio = 1.2;
+  @override
+  void didUpdateWidget(covariant ItemCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.item.imagePath != widget.item.imagePath) {
+      _aspectRatio = widget.item.aspectRatio;
     }
   }
 
