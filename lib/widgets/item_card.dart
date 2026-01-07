@@ -1,11 +1,10 @@
 import 'dart:io';
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import '../domain/wish.dart';
 import '../domain/wish_priority.dart';
 import '../presentation/wish_priority_presentation.dart';
 
-class ItemCard extends StatefulWidget {
+class ItemCard extends StatelessWidget {
   final Wish item;
   final double cardWidth;
   final VoidCallback onTap;
@@ -18,70 +17,45 @@ class ItemCard extends StatefulWidget {
   });
 
   @override
-  State<ItemCard> createState() => _ItemCardState();
-}
-
-class _ItemCardState extends State<ItemCard> {
-  double? _aspectRatio;
-
-  @override
-  void initState() {
-    super.initState();
-    _aspectRatio = widget.item.aspectRatio;
-  }
-
-  @override
-  void didUpdateWidget(covariant ItemCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.item.imagePath != widget.item.imagePath) {
-      _aspectRatio = widget.item.aspectRatio;
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final aspectRatio = _aspectRatio ?? 1.2;
-    final clampedAspectRatio = aspectRatio.clamp(0.7, 1.8);
+    final aspectRatio = item.aspectRatio.clamp(0.7, 1.8);
+    final cardHeight = cardWidth * aspectRatio;
 
     return GestureDetector(
-      onTap: widget.onTap,
+      onTap: onTap,
       child: Stack(
-        alignment: Alignment.topLeft,
         children: [
+          // 画像
           ClipRRect(
             borderRadius: BorderRadius.circular(18),
             child: Container(
-              width: widget.cardWidth,
-              height: widget.cardWidth * clampedAspectRatio,
+              width: cardWidth,
+              height: cardHeight,
               color: Colors.grey[300],
-              child: widget.item.imagePath.isNotEmpty
+              child: item.imagePath.isNotEmpty
                   ? Image.file(
-                      File(widget.item.imagePath),
-                      width: widget.cardWidth,
-                      height: widget.cardWidth * clampedAspectRatio,
+                      File(item.imagePath),
+                      width: cardWidth,
+                      height: cardHeight,
                       fit: BoxFit.cover,
                     )
-                  : const Icon(
-                      Icons.photo,
-                      size: 48,
-                      color: Colors.grey,
-                    ),
+                  : const Icon(Icons.photo, size: 48, color: Colors.grey),
             ),
           ),
-          if (widget.item.priority != WishPriority.none)
-            Padding(
-              padding: const EdgeInsets.all(10),
+
+          // 優先度ラベル
+          if (item.priority != WishPriority.none)
+            Positioned(
+              top: 10,
+              left: 10,
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: widget.item.priority.color.withOpacity(0.9),
+                  color: item.priority.color.withOpacity(0.9),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  widget.item.priority.label,
+                  item.priority.label,
                   style: const TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
@@ -95,4 +69,3 @@ class _ItemCardState extends State<ItemCard> {
     );
   }
 }
-

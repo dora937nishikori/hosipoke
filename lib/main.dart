@@ -27,18 +27,19 @@ class MyApp extends StatelessWidget {
           create: (_) => InMemoryWishRepository(),
         ),
         ChangeNotifierProvider<PocketStore>(
-          create: (context) =>
-              PocketStore(repository: context.read<WishRepository>()),
+          create: (context) => PocketStore(
+            repository: context.read<WishRepository>(),
+          ),
         ),
       ],
       child: MaterialApp(
-            title: 'peace_hosipoke',
-            theme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(seedColor: Colors.yellow),
-              useMaterial3: true,
-            ),
-            home: const ContentView(),
-          ),
+        title: 'peace_hosipoke',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.yellow),
+          useMaterial3: true,
+        ),
+        home: const ContentView(),
+      ),
     );
   }
 }
@@ -51,8 +52,7 @@ class ContentView extends StatefulWidget {
 }
 
 class _ContentViewState extends State<ContentView> {
-  bool _showCamera = false;
-  bool _cameraOpened = false;
+  bool _isCameraOpen = false;
 
   @override
   void initState() {
@@ -68,46 +68,35 @@ class _ContentViewState extends State<ContentView> {
   }
 
   void _openCamera() {
-    if (_cameraOpened) return;
-    _cameraOpened = true;
-    setState(() {
-      _showCamera = true;
-    });
+    if (_isCameraOpen) return;
+    _isCameraOpen = true;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => CameraPickerView(
-            onImagePicked: _handleImagePicked,
-            onCancel: () {
-              setState(() {
-                _showCamera = false;
-                _cameraOpened = false;
-              });
-              Navigator.of(context).pop();
-            },
-          ),
-          fullscreenDialog: true,
-        ),
-      ).then((_) {
-        if (mounted) {
-          setState(() {
-            _showCamera = false;
-            _cameraOpened = false;
-          });
-        }
-      });
+      Navigator.of(context)
+          .push(
+            MaterialPageRoute(
+              builder: (_) => CameraPickerView(
+                onImagePicked: _handleImagePicked,
+                onCancel: _closeCamera,
+              ),
+              fullscreenDialog: true,
+            ),
+          )
+          .then((_) => _isCameraOpen = false);
     });
   }
 
+  void _closeCamera() {
+    _isCameraOpen = false;
+    Navigator.of(context).pop();
+  }
+
   void _handleImagePicked(File imageFile) {
-    setState(() {
-      _showCamera = false;
-      _cameraOpened = false;
-    });
+    _isCameraOpen = false;
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => SaveItemView(
+        builder: (_) => SaveItemView(
           photo: imageFile,
           onSave: (memo, priority) {
             context.read<PocketStore>().add(
@@ -131,39 +120,27 @@ class _ContentViewState extends State<ContentView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Navigator(
-        onGenerateRoute: (settings) {
-          return MaterialPageRoute(
-            builder: (context) => PocketView(
-              onSelect: (item) {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => ItemDetailView(
-                      item: item,
-                      onSave: (updatedNote, updatedPriority) async {
-                        await context.read<PocketStore>().update(
-                              id: item.id,
-                              note: updatedNote,
-                              priority: updatedPriority,
-                            );
-                      },
-                      onClose: () {
-                        Navigator.of(context).pop();
-                      },
-                    ),
-                  ),
-                );
-              },
-              onAdd: () {
-                _openCamera();
-              },
-            ),
-          );
-        },
-      ),
+    return PocketView(
+      onSelect: _navigateToDetail,
+      onAdd: _openCamera,
     );
   }
 
+  void _navigateToDetail(item) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ItemDetailView(
+          item: item,
+          onSave: (updatedNote, updatedPriority) async {
+            await context.read<PocketStore>().update(
+                  id: item.id,
+                  note: updatedNote,
+                  priority: updatedPriority,
+                );
+          },
+          onClose: () => Navigator.of(context).pop(),
+        ),
+      ),
+    );
+  }
 }
-
