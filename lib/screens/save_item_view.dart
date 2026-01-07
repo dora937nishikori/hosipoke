@@ -22,14 +22,17 @@ class SaveItemView extends StatefulWidget {
 }
 
 class _SaveItemViewState extends State<SaveItemView> {
-  late String _memo;
-  late WishPriority _priority;
+  final _memoController = TextEditingController();
+  WishPriority _priority = WishPriority.none;
 
   @override
-  void initState() {
-    super.initState();
-    _memo = '';
-    _priority = WishPriority.none;
+  void dispose() {
+    _memoController.dispose();
+    super.dispose();
+  }
+
+  void _handleSave() {
+    widget.onSave(_memoController.text, _priority);
   }
 
   @override
@@ -40,10 +43,7 @@ class _SaveItemViewState extends State<SaveItemView> {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.close),
-          onPressed: () {
-            widget.onClose();
-            Navigator.of(context).pop();
-          },
+          onPressed: widget.onClose,
         ),
         actions: [
           TextButton(
@@ -53,111 +53,71 @@ class _SaveItemViewState extends State<SaveItemView> {
         ],
       ),
       body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  color: Colors.grey[300],
-                  child: Image.file(
-                    widget.photo,
-                    fit: BoxFit.contain,
-                    width: double.infinity,
-                  ),
+            // 写真プレビュー
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                color: Colors.grey[300],
+                child: Image.file(
+                  widget.photo,
+                  fit: BoxFit.contain,
+                  width: double.infinity,
                 ),
               ),
             ),
             const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'いつほしい？',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  PriorityPicker(
-                    selected: _priority,
-                    onChanged: (priority) {
-                      setState(() {
-                        _priority = priority;
-                      });
-                    },
-                  ),
-                ],
-              ),
+
+            // 優先度選択
+            const Text(
+              'いつほしい？',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'メモ',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    decoration: const InputDecoration(
-                      hintText: 'アイテムに関するメモを入力',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(8)),
-                      ),
-                    ),
-                    maxLines: null,
-                    onChanged: (value) {
-                      setState(() {
-                        _memo = value;
-                      });
-                    },
-                  ),
-                ],
-              ),
+            PriorityPicker(
+              selected: _priority,
+              onChanged: (priority) => setState(() => _priority = priority),
             ),
             const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    widget.onSave(_memo, _priority);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.yellow,
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
+
+            // メモ入力
+            TextField(
+              controller: _memoController,
+              decoration: const InputDecoration(
+                hintText: 'アイテムに関するメモを入力',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(8)),
+                ),
+              ),
+              maxLines: null,
+            ),
+            const SizedBox(height: 12),
+
+            // 保存ボタン
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _handleSave,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.yellow,
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  child: const Text(
-                    'アイテムを保存する',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                ),
+                child: const Text(
+                  'アイテムを保存する',
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
             ),
-            const SizedBox(height: 24),
           ],
         ),
       ),
     );
   }
 }
-

@@ -14,6 +14,11 @@ class PocketView extends StatelessWidget {
     required this.onAdd,
   });
 
+  static const double _horizontalPadding = 16.0;
+  static const double _columnSpacing = 16.0;
+  static const double _verticalSpacing = 16.0;
+  static const double _rightColumnTopOffset = 12.0;
+
   @override
   Widget build(BuildContext context) {
     final items = context.watch<PocketStore>().items;
@@ -24,112 +29,50 @@ class PocketView extends StatelessWidget {
         centerTitle: true,
         elevation: 0,
       ),
+      floatingActionButton: _AddButton(onTap: onAdd),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: LayoutBuilder(
         builder: (context, constraints) {
-          const horizontalPadding = 16.0;
-          const columnSpacing = 16.0;
-          const verticalSpacing = 16.0;
-          const rightColumnTopOffset = 12.0;
-          final cardWidth = (constraints.maxWidth - horizontalPadding * 2 - columnSpacing) / 2;
+          final cardWidth =
+              (constraints.maxWidth - _horizontalPadding * 2 - _columnSpacing) / 2;
 
           final leftItems = <Wish>[];
           final rightItems = <Wish>[];
-
           for (int i = 0; i < items.length; i++) {
-            if (i % 2 == 0) {
-              leftItems.add(items[i]);
-            } else {
-              rightItems.add(items[i]);
-            }
+            (i.isEven ? leftItems : rightItems).add(items[i]);
           }
 
-          return Scaffold(
-            body: Stack(
-              fit: StackFit.expand,
-              children: [
-                SingleChildScrollView(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                    child: Padding(
-                      padding: const EdgeInsets.only(
-                        left: horizontalPadding,
-                        right: horizontalPadding,
-                        top: 24,
-                        bottom: 120,
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              children: items.isEmpty
-                                  ? _buildPlaceholderColumn(
-                                      [1.2, 1.0, 1.1, 0.9],
-                                      cardWidth,
-                                      0,
-                                      verticalSpacing,
-                                    )
-                                  : leftItems
-                                      .asMap()
-                                      .entries
-                                      .map((entry) {
-                                        final isLast = entry.key == leftItems.length - 1;
-                                        final item = entry.value;
-                                        return Padding(
-                                          padding: EdgeInsets.only(
-                                            bottom: isLast ? 0 : verticalSpacing,
-                                          ),
-                                          child: ItemCard(
-                                            key: ValueKey(item.id),
-                                            item: item,
-                                            cardWidth: cardWidth,
-                                            onTap: () => onSelect(item),
-                                          ),
-                                        );
-                                      })
-                                      .toList(),
-                            ),
-                          ),
-                          SizedBox(width: columnSpacing),
-                          Expanded(
-                            child: Column(
-                              children: items.isEmpty
-                                  ? _buildPlaceholderColumn(
-                                      [1.0, 1.1, 0.95, 1.05],
-                                      cardWidth,
-                                      rightColumnTopOffset,
-                                      verticalSpacing,
-                                    )
-                                  : rightItems.asMap().entries.map((entry) {
-                                      final index = entry.key;
-                                      final item = entry.value;
-                                      final isLast = index == rightItems.length - 1;
-                                      return Padding(
-                                        padding: EdgeInsets.only(
-                                          top: index == 0 ? rightColumnTopOffset : 0,
-                                          bottom: isLast ? 0 : verticalSpacing,
-                                        ),
-                                        child: ItemCard(
-                                          key: ValueKey(item.id),
-                                          item: item,
-                                          cardWidth: cardWidth,
-                                          onTap: () => onSelect(item),
-                                        ),
-                                      );
-                                    }).toList(),
-                            ),
-                          ),
-                        ],
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Padding(
+                padding: const EdgeInsets.only(
+                  left: _horizontalPadding,
+                  right: _horizontalPadding,
+                  top: 24,
+                  bottom: 120,
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: _buildColumn(
+                        leftItems,
+                        cardWidth,
+                        topOffset: 0,
                       ),
                     ),
-                  ),
+                    const SizedBox(width: _columnSpacing),
+                    Expanded(
+                      child: _buildColumn(
+                        rightItems,
+                        cardWidth,
+                        topOffset: _rightColumnTopOffset,
+                      ),
+                    ),
+                  ],
                 ),
-                Positioned(
-                  right: 20,
-                  bottom: 50,
-                  child: _buildAddButton(),
-                ),
-              ],
+              ),
             ),
           );
         },
@@ -137,70 +80,58 @@ class PocketView extends StatelessWidget {
     );
   }
 
-  List<Widget> _buildPlaceholderColumn(
-    List<double> ratios,
-    double cardWidth,
-    double topOffset,
-    double spacing,
-  ) {
-    return ratios.asMap().entries.map((entry) {
-      final index = entry.key;
-      final ratio = entry.value;
-      return Padding(
-        padding: EdgeInsets.only(
-          top: index == 0 ? topOffset : spacing,
-        ),
-        child: Container(
-          width: cardWidth,
-          height: cardWidth * ratio,
-          decoration: BoxDecoration(
-            color: Colors.grey[300],
-            borderRadius: BorderRadius.circular(18),
+  Widget _buildColumn(List<Wish> items, double cardWidth, {required double topOffset}) {
+    if (items.isEmpty) return const SizedBox.shrink();
+    return Column(
+      children: items.asMap().entries.map((entry) {
+        final index = entry.key;
+        final item = entry.value;
+        final isLast = index == items.length - 1;
+        return Padding(
+          padding: EdgeInsets.only(
+            top: index == 0 ? topOffset : 0,
+            bottom: isLast ? 0 : _verticalSpacing,
           ),
-        ),
-      );
-    }).toList();
+          child: ItemCard(
+            key: ValueKey(item.id),
+            item: item,
+            cardWidth: cardWidth,
+            onTap: () => onSelect(item),
+          ),
+        );
+      }).toList(),
+    );
   }
 
-  Widget _buildAddButton() {
-    return GestureDetector(
-      onTap: onAdd,
-      child: Container(
-        width: 96,
-        height: 96,
-        decoration: BoxDecoration(
-          color: Colors.yellow,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.15),
-              blurRadius: 8,
-              offset: const Offset(0, 6),
-            ),
-          ],
+}
+
+class _AddButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _AddButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        FloatingActionButton(
+          onPressed: onTap,
+          backgroundColor: Colors.yellow,
+          foregroundColor: Colors.black,
+          elevation: 4,
+          child: const Icon(Icons.add, size: 28),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.add,
-              size: 22,
-              color: Colors.black,
-              weight: 700,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'あつめる',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.black,
-              ),
-            ),
-          ],
+        const SizedBox(height: 6),
+        const Text(
+          'あつめる',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Colors.black,
+          ),
         ),
-      ),
+      ],
     );
   }
 }
-
