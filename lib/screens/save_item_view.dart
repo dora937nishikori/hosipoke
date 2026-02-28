@@ -53,46 +53,45 @@ class _SaveItemViewState extends State<SaveItemView> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 写真プレビュー
+            // 写真プレビュー（写真全体を少し小さく表示）
             ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Container(
-                color: Colors.grey[300],
-                child: Image.file(
-                  widget.photo,
-                  fit: BoxFit.contain,
-                  width: double.infinity,
-                ),
+              borderRadius: BorderRadius.circular(18),
+              child: Image.file(
+                widget.photo,
+                fit: BoxFit.contain,
+                width: double.infinity,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 20),
 
             // 優先度選択
-            const Text(
-              'いつほしい？',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-            ),
             const SizedBox(height: 12),
             PriorityPicker(
               selected: _priority,
               onChanged: (priority) => setState(() => _priority = priority),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
 
             // メモ入力
-            TextField(
-              controller: _memoController,
-              decoration: const InputDecoration(
-                hintText: 'アイテムに関するメモを入力',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(8)),
-                ),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(10),
               ),
-              maxLines: null,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              child: TextField(
+                controller: _memoController,
+                decoration: const InputDecoration(
+                  hintText: 'メモ',
+                  border: InputBorder.none,
+                ),
+                style: const TextStyle(fontSize: 14),
+                maxLines: null,
+              ),
             ),
             const SizedBox(height: 12),
 

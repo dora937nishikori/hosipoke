@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 import '../domain/repositories/wish_repository.dart';
 import '../domain/wish.dart';
 import '../domain/wish_priority.dart';
@@ -32,11 +34,15 @@ class PocketStore extends ChangeNotifier {
     required WishPriority priority,
   }) async {
     final aspectRatio = await _computeAspectRatio(imageFile);
+
+    // 画像を永続ディレクトリにコピー
+    final permanentPath = await _copyImageToPermanentStorage(imageFile);
+
     final wish = Wish(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       note: note.trim(),
       createdAt: DateTime.now(),
-      imagePath: imageFile.path,
+      imagePath: permanentPath,
       priority: priority,
       aspectRatio: aspectRatio,
     );
@@ -63,6 +69,35 @@ class PocketStore extends ChangeNotifier {
     await repository.update(updated);
     _items = await repository.fetchAll();
     notifyListeners();
+  }
+
+  /// アイテムを削除
+  Future<void> delete({required String id}) async {
+    final index = _items.indexWhere((item) => item.id == id);
+    if (index == -1) return;
+
+    // 画像ファイルを削除
+    final file = File(_items[index].imagePath);
+    if (await file.exists()) {
+      await file.delete();
+    }
+
+    await repository.delete(id);
+    _items = await repository.fetchAll();
+    notifyListeners();
+  }
+
+  /// 画像を永続ディレクトリにコピー
+  Future<String> _copyImageToPermanentStorage(File imageFile) async {
+    final appDir = await getApplicationDocumentsDirectory();
+    final imagesDir = Directory(p.join(appDir.path, 'images'));
+    if (!await imagesDir.exists()) {
+      await imagesDir.create(recursive: true);
+    }
+    final fileName =
+        '${DateTime.now().millisecondsSinceEpoch}${p.extension(imageFile.path)}';
+    final permanentFile = await imageFile.copy(p.join(imagesDir.path, fileName));
+    return permanentFile.path;
   }
 
   /// 画像のアスペクト比を計算

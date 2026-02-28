@@ -25,5 +25,10 @@ class InMemoryWishRepository implements WishRepository {
     if (index == -1) return;
     _items[index] = wish;
   }
+
+  @override
+  Future<void> delete(String id) async {
+    _items.removeWhere((w) => w.id == id);
+  }
 }
 

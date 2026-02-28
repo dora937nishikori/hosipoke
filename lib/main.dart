@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'data/repositories/in_memory_wish_repository.dart';
+import 'data/repositories/sqflite_wish_repository.dart';
 import 'domain/repositories/wish_repository.dart';
 import 'providers/pocket_store.dart';
 import 'screens/pocket_view.dart';
@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         Provider<WishRepository>(
-          create: (_) => InMemoryWishRepository(),
+          create: (_) => SqfliteWishRepository(),
         ),
         ChangeNotifierProvider<PocketStore>(
           create: (context) => PocketStore(
@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
-        title: 'peace_hosipoke',
+        title: 'ほしポケ',
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.yellow),
           useMaterial3: true,
@@ -139,6 +139,11 @@ class _ContentViewState extends State<ContentView> {
                 );
           },
           onClose: () => Navigator.of(context).pop(),
+          onDelete: () async {
+            await context.read<PocketStore>().delete(id: item.id);
+            if (!mounted) return;
+            Navigator.of(context).pop();
+          },
         ),
       ),
     );

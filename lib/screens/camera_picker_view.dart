@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:image/image.dart' as img;
+import 'package:path_provider/path_provider.dart';
 
 class CameraPickerView extends StatefulWidget {
   final Function(File) onImagePicked;
@@ -25,6 +27,10 @@ class _CameraPickerViewState extends State<CameraPickerView>
   CameraController? _controller;
   bool _isInitializing = true;
   String? _errorMessage;
+  
+  // UIバーの高さ
+  static const double _topBarHeight = 80;
+  static const double _bottomBarHeight = 140;
 
   @override
   void initState() {
@@ -112,10 +118,69 @@ class _CameraPickerViewState extends State<CameraPickerView>
 
     try {
       final file = await controller.takePicture();
-      widget.onImagePicked(File(file.path));
+      
+      // プレビュー領域のアスペクト比を計算
+      final screenSize = MediaQuery.of(context).size;
+      final previewWidth = screenSize.width;
+      final previewHeight = screenSize.height - _topBarHeight - _bottomBarHeight;
+      final previewAspectRatio = previewWidth / previewHeight;
+      
+      // 画像をプレビュー領域のアスペクト比に合わせてクロップ
+      final croppedFile = await _cropImageToPreviewAspect(
+        File(file.path),
+        previewAspectRatio,
+      );
+      
+      widget.onImagePicked(croppedFile);
     } catch (e) {
-      debugPrint('撮影エラー: $e');
+      // 撮影エラーは無視（UIはそのまま）
     }
+  }
+  
+  /// 画像をプレビュー領域のアスペクト比に合わせてクロップ
+  Future<File> _cropImageToPreviewAspect(File imageFile, double targetAspectRatio) async {
+    final bytes = await imageFile.readAsBytes();
+    final originalImage = img.decodeImage(bytes);
+    
+    if (originalImage == null) {
+      return imageFile; // デコードできない場合は元の画像を返す
+    }
+    
+    final imgWidth = originalImage.width;
+    final imgHeight = originalImage.height;
+    final imgAspectRatio = imgWidth / imgHeight;
+    
+    int cropWidth, cropHeight, offsetX, offsetY;
+    
+    if (imgAspectRatio > targetAspectRatio) {
+      // 画像が横長すぎる → 横をクロップ
+      cropHeight = imgHeight;
+      cropWidth = (imgHeight * targetAspectRatio).round();
+      offsetX = ((imgWidth - cropWidth) / 2).round();
+      offsetY = 0;
+    } else {
+      // 画像が縦長すぎる → 縦をクロップ
+      cropWidth = imgWidth;
+      cropHeight = (imgWidth / targetAspectRatio).round();
+      offsetX = 0;
+      offsetY = ((imgHeight - cropHeight) / 2).round();
+    }
+    
+    final croppedImage = img.copyCrop(
+      originalImage,
+      x: offsetX,
+      y: offsetY,
+      width: cropWidth,
+      height: cropHeight,
+    );
+    
+    // 一時ファイルとして保存
+    final tempDir = await getTemporaryDirectory();
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final croppedFile = File('${tempDir.path}/cropped_$timestamp.jpg');
+    await croppedFile.writeAsBytes(img.encodeJpg(croppedImage, quality: 95));
+    
+    return croppedFile;
   }
 
   Future<void> _pickFromGallery() async {
@@ -125,7 +190,7 @@ class _CameraPickerViewState extends State<CameraPickerView>
         widget.onImagePicked(File(image.path));
       }
     } catch (e) {
-      debugPrint('ギャラリー選択エラー: $e');
+      // ギャラリー選択エラーは無視
     }
   }
 
@@ -135,8 +200,14 @@ class _CameraPickerViewState extends State<CameraPickerView>
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // カメラプレビュー
-          Positioned.fill(child: _buildPreview()),
+          // カメラプレビュー（バナーの内側に配置）
+          Positioned(
+            top: _topBarHeight,
+            left: 0,
+            right: 0,
+            bottom: _bottomBarHeight,
+            child: _buildPreview(),
+          ),
 
           // 上部バー
           Positioned(
@@ -144,7 +215,7 @@ class _CameraPickerViewState extends State<CameraPickerView>
             left: 0,
             right: 0,
             child: Container(
-              height: 80,
+              height: _topBarHeight,
               color: Colors.yellow.withOpacity(0.85),
             ),
           ),
@@ -155,7 +226,7 @@ class _CameraPickerViewState extends State<CameraPickerView>
             left: 0,
             right: 0,
             child: Container(
-              height: 140,
+              height: _bottomBarHeight,
               color: Colors.yellow.withOpacity(0.9),
             ),
           ),
@@ -177,7 +248,7 @@ class _CameraPickerViewState extends State<CameraPickerView>
           // ギャラリーボタン
           Positioned(
             left: 28,
-            bottom: 55,
+            bottom: 60,
             child: _CircleButton(
               onTap: _pickFromGallery,
               icon: Icons.photo_library,
@@ -197,21 +268,8 @@ class _CameraPickerViewState extends State<CameraPickerView>
           // ポケットボタン
           Positioned(
             right: 28,
-            bottom: 65,
-            child: GestureDetector(
-              onTap: widget.onCancel,
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.shopping_bag, size: 20, color: Colors.black),
-                  SizedBox(width: 6),
-                  Text(
-                    'ポケット',
-                    style: TextStyle(fontSize: 16, color: Colors.black),
-                  ),
-                ],
-              ),
-            ),
+            bottom: 60,
+            child: _PocketButton(onTap: widget.onCancel),
           ),
         ],
       ),
@@ -231,14 +289,23 @@ class _CameraPickerViewState extends State<CameraPickerView>
       );
     }
 
-    final previewSize = _controller!.value.previewSize;
-    return FittedBox(
-      fit: BoxFit.cover,
-      child: SizedBox(
-        width: previewSize?.height ?? MediaQuery.of(context).size.width,
-        height: previewSize?.width ?? MediaQuery.of(context).size.height,
-        child: CameraPreview(_controller!),
-      ),
+    // バナーの内側の領域いっぱいにカメラプレビューを拡大表示
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final previewWidth = constraints.maxWidth;
+        final previewHeight = constraints.maxHeight;
+        final cameraAspectRatio = _controller!.value.aspectRatio;
+        
+        // カメラのアスペクト比に基づいて、領域いっぱいに拡大
+        return FittedBox(
+          fit: BoxFit.cover,
+          child: SizedBox(
+            width: previewWidth,
+            height: previewWidth / cameraAspectRatio,
+            child: CameraPreview(_controller!),
+          ),
+        );
+      },
     );
   }
 }
@@ -254,8 +321,8 @@ class _CircleButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 52,
-        height: 52,
+        width: 60,
+        height: 60,
         decoration: BoxDecoration(
           color: Colors.grey[100],
           shape: BoxShape.circle,
@@ -277,21 +344,116 @@ class _ShutterButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 72,
-        height: 72,
+        width: 76,
+        height: 76,
         decoration: BoxDecoration(
-          color: Colors.yellow,
+          color: const Color(0xFF1C1C1C),
           shape: BoxShape.circle,
+          border: Border.all(color: Colors.yellow, width: 2),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 6,
-              offset: const Offset(0, 4),
+              color: Colors.black.withOpacity(0.25),
+              blurRadius: 8,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
-        child: const Icon(Icons.star, size: 26, color: Colors.black),
+        child: const Icon(
+          Icons.star,
+          size: 32,
+          color: Colors.yellow,
+        ),
       ),
     );
+  }
+}
+
+class _PocketButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _PocketButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 64,
+            height: 64,
+            child: CustomPaint(
+              painter: _PocketIconPainter(color: Colors.black),
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'ポケット',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.black,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PocketIconPainter extends CustomPainter {
+  const _PocketIconPainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = size.width * 0.06
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final width = size.width;
+    final height = size.height;
+
+    // ポケット枠
+    final rect = Rect.fromLTWH(
+      width * 0.2,
+      height * 0.45,
+      width * 0.6,
+      height * 0.55,
+    );
+    final borderRadius = Radius.circular(width * 0.1);
+    final rrect = RRect.fromRectAndCorners(
+      rect,
+      topLeft: borderRadius,
+      topRight: borderRadius,
+      bottomLeft: Radius.circular(width * 0.28),
+      bottomRight: Radius.circular(width * 0.28),
+    );
+    canvas.drawRRect(rrect, paint);
+
+    // スマイル
+    final smilePath = Path();
+    final smileWidth = width * 0.28;
+    final smileHeight = height * 0.16;
+    final smileLeft = (width - smileWidth) / 2;
+    final smileTop = height * 0.7;
+    smilePath.moveTo(smileLeft, smileTop);
+    smilePath.quadraticBezierTo(
+      width / 2,
+      smileTop + smileHeight,
+      smileLeft + smileWidth,
+      smileTop,
+    );
+    canvas.drawPath(smilePath, paint..strokeWidth = size.width * 0.07);
+  }
+
+  @override
+  bool shouldRepaint(covariant _PocketIconPainter oldDelegate) {
+    return oldDelegate.color != color;
   }
 }
