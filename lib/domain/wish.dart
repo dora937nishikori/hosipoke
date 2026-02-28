@@ -34,5 +34,27 @@ class Wish {
       aspectRatio: aspectRatio ?? this.aspectRatio,
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'note': note,
+      'createdAt': createdAt.toIso8601String(),
+      'imagePath': imagePath,
+      'priority': priority.index,
+      'aspectRatio': aspectRatio,
+    };
+  }
+
+  factory Wish.fromMap(Map<String, dynamic> map) {
+    return Wish(
+      id: map['id'] as String,
+      note: map['note'] as String,
+      createdAt: DateTime.parse(map['createdAt'] as String),
+      imagePath: map['imagePath'] as String,
+      priority: WishPriority.values[map['priority'] as int],
+      aspectRatio: (map['aspectRatio'] as num).toDouble(),
+    );
+  }
 }
 

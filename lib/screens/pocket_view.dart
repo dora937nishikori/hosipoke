@@ -21,7 +21,8 @@ class PocketView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final items = context.watch<PocketStore>().items;
+    final store = context.watch<PocketStore>();
+    final items = store.items;
 
     return Scaffold(
       appBar: AppBar(
@@ -31,7 +32,26 @@ class PocketView extends StatelessWidget {
       ),
       floatingActionButton: _AddButton(onTap: onAdd),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      body: LayoutBuilder(
+      body: store.isInitialized && items.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.camera_alt_outlined, size: 64, color: Colors.grey[400]),
+                  const SizedBox(height: 16),
+                  Text(
+                    'まだアイテムがありません',
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'カメラで欲しいものを撮影しましょう',
+                    style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+                  ),
+                ],
+              ),
+            )
+          : LayoutBuilder(
         builder: (context, constraints) {
           final cardWidth =
               (constraints.maxWidth - _horizontalPadding * 2 - _columnSpacing) / 2;

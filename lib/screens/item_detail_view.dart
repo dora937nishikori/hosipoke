@@ -9,12 +9,14 @@ class ItemDetailView extends StatefulWidget {
   final Wish item;
   final Function(String, WishPriority) onSave;
   final VoidCallback onClose;
+  final VoidCallback onDelete;
 
   const ItemDetailView({
     super.key,
     required this.item,
     required this.onSave,
     required this.onClose,
+    required this.onDelete,
   });
 
   @override
@@ -43,6 +45,30 @@ class _ItemDetailViewState extends State<ItemDetailView> {
     Navigator.of(context).pop();
   }
 
+  void _confirmDelete(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('削除しますか？'),
+        content: const Text('このアイテムを削除すると元に戻せません。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('キャンセル'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              widget.onDelete();
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('削除'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('yyyy年M月d日 HH:mm', 'ja_JP');
@@ -58,55 +84,55 @@ class _ItemDetailViewState extends State<ItemDetailView> {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 写真
+            // 写真プレビュー（写真全体を表示）
             ClipRRect(
-              borderRadius: BorderRadius.circular(22),
-              child: Container(
-                color: Colors.grey[300],
-                child: widget.item.imagePath.isNotEmpty
-                    ? Image.file(
-                        File(widget.item.imagePath),
-                        fit: BoxFit.contain,
-                        width: double.infinity,
-                      )
-                    : const SizedBox(
-                        height: 200,
-                        child: Center(
-                          child: Icon(Icons.photo, size: 100, color: Colors.grey),
-                        ),
+              borderRadius: BorderRadius.circular(18),
+              child: widget.item.imagePath.isNotEmpty
+                  ? Image.file(
+                      File(widget.item.imagePath),
+                      fit: BoxFit.contain,
+                      width: double.infinity,
+                    )
+                  : Container(
+                      height: 200,
+                      color: Colors.grey[300],
+                      child: const Center(
+                        child: Icon(Icons.photo, size: 100, color: Colors.grey),
                       ),
-              ),
+                    ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
             // 優先度選択
-            const Text(
-              'いつほしい？',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             PriorityPicker(
               selected: _priority,
               onChanged: (priority) => setState(() => _priority = priority),
             ),
             const SizedBox(height: 16),
 
-            // メモ入力
-            TextField(
-              controller: _memoController,
-              decoration: const InputDecoration(
-                hintText: 'アイテムに関するメモを入力',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(8)),
-                ),
+            // メモ入力（保存画面と同じスタイル）
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(10),
               ),
-              maxLines: null,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              child: TextField(
+                controller: _memoController,
+                decoration: const InputDecoration(
+                  hintText: 'メモ',
+                  border: InputBorder.none,
+                ),
+                style: const TextStyle(fontSize: 14),
+                maxLines: null,
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
             // 更新ボタン
             SizedBox(
@@ -128,6 +154,19 @@ class _ItemDetailViewState extends State<ItemDetailView> {
               ),
             ),
             const SizedBox(height: 16),
+
+            // 削除ボタン
+            SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: () => _confirmDelete(context),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.red,
+                ),
+                child: const Text('削除する'),
+              ),
+            ),
+            const SizedBox(height: 8),
 
             // 作成日時
             Center(

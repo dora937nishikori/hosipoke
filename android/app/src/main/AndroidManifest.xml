@@ -16,7 +16,7 @@
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
 
     <application
-        android:label="peace_hosipoke"
+        android:label="ほしポケ"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
