@@ -1,7 +1,6 @@
-package com.example.peace_hosipoke
+package com.dora937.peacehosipoke
 
 import io.flutter.embedding.android.FlutterActivity
 
 class MainActivity: FlutterActivity() {
 }
-
