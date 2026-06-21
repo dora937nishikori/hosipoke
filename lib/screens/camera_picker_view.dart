@@ -27,7 +27,7 @@ class _CameraPickerViewState extends State<CameraPickerView>
   CameraController? _controller;
   bool _isInitializing = true;
   String? _errorMessage;
-  
+
   // UIバーの高さ
   static const double _topBarHeight = 80;
   static const double _bottomBarHeight = 140;
@@ -85,7 +85,7 @@ class _CameraPickerViewState extends State<CameraPickerView>
 
       final controller = CameraController(
         backCamera,
-        ResolutionPreset.max,
+        ResolutionPreset.veryHigh,
         enableAudio: false,
       );
 
@@ -117,41 +117,47 @@ class _CameraPickerViewState extends State<CameraPickerView>
     if (controller == null || !controller.value.isInitialized) return;
 
     try {
-      final file = await controller.takePicture();
-      
       // プレビュー領域のアスペクト比を計算
-      final screenSize = MediaQuery.of(context).size;
+      final screenSize = MediaQuery.sizeOf(context);
       final previewWidth = screenSize.width;
-      final previewHeight = screenSize.height - _topBarHeight - _bottomBarHeight;
+      final previewHeight =
+          screenSize.height - _topBarHeight - _bottomBarHeight;
       final previewAspectRatio = previewWidth / previewHeight;
-      
+
+      final file = await controller.takePicture();
+      if (!mounted) return;
+
       // 画像をプレビュー領域のアスペクト比に合わせてクロップ
       final croppedFile = await _cropImageToPreviewAspect(
         File(file.path),
         previewAspectRatio,
       );
-      
+      if (!mounted) return;
+
       widget.onImagePicked(croppedFile);
     } catch (e) {
       // 撮影エラーは無視（UIはそのまま）
     }
   }
-  
+
   /// 画像をプレビュー領域のアスペクト比に合わせてクロップ
-  Future<File> _cropImageToPreviewAspect(File imageFile, double targetAspectRatio) async {
+  Future<File> _cropImageToPreviewAspect(
+    File imageFile,
+    double targetAspectRatio,
+  ) async {
     final bytes = await imageFile.readAsBytes();
     final originalImage = img.decodeImage(bytes);
-    
+
     if (originalImage == null) {
       return imageFile; // デコードできない場合は元の画像を返す
     }
-    
+
     final imgWidth = originalImage.width;
     final imgHeight = originalImage.height;
     final imgAspectRatio = imgWidth / imgHeight;
-    
+
     int cropWidth, cropHeight, offsetX, offsetY;
-    
+
     if (imgAspectRatio > targetAspectRatio) {
       // 画像が横長すぎる → 横をクロップ
       cropHeight = imgHeight;
@@ -165,7 +171,7 @@ class _CameraPickerViewState extends State<CameraPickerView>
       offsetX = 0;
       offsetY = ((imgHeight - cropHeight) / 2).round();
     }
-    
+
     final croppedImage = img.copyCrop(
       originalImage,
       x: offsetX,
@@ -173,13 +179,13 @@ class _CameraPickerViewState extends State<CameraPickerView>
       width: cropWidth,
       height: cropHeight,
     );
-    
+
     // 一時ファイルとして保存
     final tempDir = await getTemporaryDirectory();
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final croppedFile = File('${tempDir.path}/cropped_$timestamp.jpg');
     await croppedFile.writeAsBytes(img.encodeJpg(croppedImage, quality: 95));
-    
+
     return croppedFile;
   }
 
@@ -216,7 +222,7 @@ class _CameraPickerViewState extends State<CameraPickerView>
             right: 0,
             child: Container(
               height: _topBarHeight,
-              color: Colors.yellow.withOpacity(0.85),
+              color: Colors.yellow.withValues(alpha: 0.85),
             ),
           ),
 
@@ -227,7 +233,7 @@ class _CameraPickerViewState extends State<CameraPickerView>
             right: 0,
             child: Container(
               height: _bottomBarHeight,
-              color: Colors.yellow.withOpacity(0.9),
+              color: Colors.yellow.withValues(alpha: 0.9),
             ),
           ),
 
@@ -279,30 +285,36 @@ class _CameraPickerViewState extends State<CameraPickerView>
   Widget _buildPreview() {
     if (_errorMessage != null) {
       return Center(
-        child: Text(_errorMessage!, style: const TextStyle(color: Colors.white)),
+        child:
+            Text(_errorMessage!, style: const TextStyle(color: Colors.white)),
       );
     }
 
-    if (_isInitializing || _controller == null || !_controller!.value.isInitialized) {
+    final controller = _controller;
+    if (_isInitializing ||
+        controller == null ||
+        !controller.value.isInitialized) {
       return const Center(
         child: CircularProgressIndicator(color: Colors.yellow),
       );
     }
 
-    // バナーの内側の領域いっぱいにカメラプレビューを拡大表示
+    // プレビュー領域を歪みなく中央クロップで埋める（端末標準カメラと同じ挙動）。
+    // CameraPreview は端末の向きに合わせて自前で正しいアスペクト比を保つため、
+    // ここでは領域を覆うのに必要な拡大率だけを算出し Transform.scale で適用する。
     return LayoutBuilder(
       builder: (context, constraints) {
-        final previewWidth = constraints.maxWidth;
-        final previewHeight = constraints.maxHeight;
-        final cameraAspectRatio = _controller!.value.aspectRatio;
-        
-        // カメラのアスペクト比に基づいて、領域いっぱいに拡大
-        return FittedBox(
-          fit: BoxFit.cover,
-          child: SizedBox(
-            width: previewWidth,
-            height: previewWidth / cameraAspectRatio,
-            child: CameraPreview(_controller!),
+        final areaAspectRatio = constraints.maxWidth / constraints.maxHeight;
+        var scale = areaAspectRatio * controller.value.aspectRatio;
+        if (scale < 1) scale = 1 / scale;
+
+        return ClipRect(
+          child: Transform.scale(
+            scale: scale,
+            alignment: Alignment.center,
+            child: Center(
+              child: CameraPreview(controller),
+            ),
           ),
         );
       },
@@ -352,7 +364,7 @@ class _ShutterButton extends StatelessWidget {
           border: Border.all(color: Colors.yellow, width: 2),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.25),
+              color: Colors.black.withValues(alpha: 0.25),
               blurRadius: 8,
               offset: const Offset(0, 6),
             ),
@@ -377,7 +389,7 @@ class _PocketButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Column(
+      child: const Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           SizedBox(
@@ -387,8 +399,8 @@ class _PocketButton extends StatelessWidget {
               painter: _PocketIconPainter(color: Colors.black),
             ),
           ),
-          const SizedBox(height: 6),
-          const Text(
+          SizedBox(height: 6),
+          Text(
             'ポケット',
             style: TextStyle(
               fontSize: 12,
