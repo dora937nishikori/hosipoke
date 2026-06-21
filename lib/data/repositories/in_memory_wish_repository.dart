@@ -31,4 +31,3 @@ class InMemoryWishRepository implements WishRepository {
     _items.removeWhere((w) => w.id == id);
   }
 }
-

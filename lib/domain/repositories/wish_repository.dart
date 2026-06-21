@@ -6,4 +6,3 @@ abstract class WishRepository {
   Future<void> update(Wish wish);
   Future<void> delete(String id);
 }
-
