@@ -47,13 +47,9 @@ test/
 
 画面、状態管理、データアクセスを分け、UI から SQLite を直接扱わない構成にしています。
 
-詳細は [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) にまとめています。
-
 ## データの扱い
 
 写真、メモ、優先度は端末内に保存します。現時点では外部サーバーへの送信処理はありません。
-
-権限の用途や保存データの扱いは [docs/PRIVACY.md](docs/PRIVACY.md) にまとめています。
 
 ## ローカル実行
 
