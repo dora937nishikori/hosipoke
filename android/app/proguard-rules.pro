@@ -8,3 +8,6 @@
 
 # SQLite
 -keep class org.sqlite.** { *; }
+
+# Play Core (deferred components)
+-dontwarn com.google.android.play.core.**

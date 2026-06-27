@@ -36,4 +36,3 @@ extension WishPriorityPresentation on WishPriority {
     }
   }
 }
-

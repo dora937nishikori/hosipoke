@@ -17,14 +17,21 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({
+    super.key,
+    this.repository,
+    this.openCameraOnEmpty = true,
+  });
+
+  final WishRepository? repository;
+  final bool openCameraOnEmpty;
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         Provider<WishRepository>(
-          create: (_) => SqfliteWishRepository(),
+          create: (_) => repository ?? SqfliteWishRepository(),
         ),
         ChangeNotifierProvider<PocketStore>(
           create: (context) => PocketStore(
@@ -38,14 +45,19 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.yellow),
           useMaterial3: true,
         ),
-        home: const ContentView(),
+        home: ContentView(openCameraOnEmpty: openCameraOnEmpty),
       ),
     );
   }
 }
 
 class ContentView extends StatefulWidget {
-  const ContentView({super.key});
+  const ContentView({
+    super.key,
+    this.openCameraOnEmpty = true,
+  });
+
+  final bool openCameraOnEmpty;
 
   @override
   State<ContentView> createState() => _ContentViewState();
@@ -61,7 +73,7 @@ class _ContentViewState extends State<ContentView> {
       final store = context.read<PocketStore>();
       await store.loadInitial();
       if (!mounted) return;
-      if (store.items.isEmpty) {
+      if (widget.openCameraOnEmpty && store.items.isEmpty) {
         _openCamera();
       }
     });

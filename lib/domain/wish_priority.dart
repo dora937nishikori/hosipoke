@@ -6,4 +6,3 @@ enum WishPriority {
   someday,
   none,
 }
-

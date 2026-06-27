@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../domain/wish_priority.dart';
 import '../presentation/wish_priority_presentation.dart';
@@ -46,16 +45,8 @@ class _PriorityPickerState extends State<PriorityPicker> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final usableWidth = constraints.maxWidth - _horizontalPadding * 2;
-        final totalStarsWidth = _options.length * _starSize;
-        final gapRaw =
-            (usableWidth - totalStarsWidth) / (_options.length - 1);
-        final gap = gapRaw.isFinite ? math.max(0, gapRaw) : 0.0;
         final slotWidth =
             _options.isNotEmpty ? usableWidth / _options.length : 0.0;
-        final positions = List<double>.generate(_options.length, (i) {
-          return _horizontalPadding + (_starSize / 2) + i * (_starSize + gap);
-        });
-        final lineY = _starSize * 0.6;
 
         return SizedBox(
           height: 72,
@@ -149,7 +140,11 @@ class _StarButton extends StatelessWidget {
                   duration: const Duration(milliseconds: 200),
                   child: Transform.translate(
                     offset: const Offset(0, -20),
-                    child: Icon(Icons.auto_awesome, size: 20, color: option.color),
+                    child: Icon(
+                      Icons.auto_awesome,
+                      size: 20,
+                      color: option.color,
+                    ),
                   ),
                 ),
               ),
@@ -157,48 +152,5 @@ class _StarButton extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class _PickerBackgroundPainter extends CustomPainter {
-  _PickerBackgroundPainter({
-    required this.centers,
-    required this.gap,
-    required this.y,
-    required this.color,
-  });
-
-  final List<double> centers;
-  final double gap;
-  final double y;
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 2.0
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-
-    // 中心点間に4本の線を引く
-    for (int i = 0; i < centers.length - 1; i++) {
-      final start = centers[i];
-      final end = centers[i + 1];
-      final inset = math.max(
-        2.0,
-        math.min(_PriorityPickerState._starSize * 0.8, gap / 1.3),
-      );
-      final lineStart = start + inset;
-      final lineEnd = end - inset;
-      canvas.drawLine(Offset(lineStart, y), Offset(lineEnd, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _PickerBackgroundPainter oldDelegate) {
-    return oldDelegate.centers != centers ||
-        oldDelegate.y != y ||
-        oldDelegate.color != color;
   }
 }
